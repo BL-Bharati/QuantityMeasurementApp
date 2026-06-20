@@ -1,15 +1,13 @@
 package org.example;
-public class QuantityWeight {
+
+public class Quantity<U extends IMeasurable> {
 
     private static final double EPSILON = 0.0001;
 
     private final double value;
-    private final WeightUnit unit;
+    private final U unit;
 
-    public QuantityWeight(
-            double value,
-            WeightUnit unit
-    ) {
+    public Quantity(double value, U unit) {
 
         validateValue(value);
 
@@ -23,7 +21,6 @@ public class QuantityWeight {
         this.unit = unit;
     }
 
-    // Validation
     private void validateValue(double value) {
 
         if (!Double.isFinite(value)) {
@@ -33,19 +30,16 @@ public class QuantityWeight {
         }
     }
 
-    // Getters
     public double getValue() {
         return value;
     }
 
-    public WeightUnit getUnit() {
+    public U getUnit() {
         return unit;
     }
 
-    // Convert to another unit
-    public QuantityWeight convertTo(
-            WeightUnit targetUnit
-    ) {
+    // Convert to target unit
+    public Quantity<U> convertTo(U targetUnit) {
 
         if (targetUnit == null) {
             throw new IllegalArgumentException(
@@ -57,31 +51,33 @@ public class QuantityWeight {
                 unit.convertToBaseUnit(value);
 
         double convertedValue =
-                targetUnit.convertFromBaseUnit(baseValue);
+                targetUnit.convertFromBaseUnit(
+                        baseValue
+                );
 
-        return new QuantityWeight(
-                convertedValue,
+        return new Quantity<>(
+                round(convertedValue),
                 targetUnit
         );
     }
 
-    // Addition (default target = first operand unit)
-    public QuantityWeight add(
-            QuantityWeight other
+    // Add with default target unit
+    public Quantity<U> add(
+            Quantity<U> other
     ) {
 
         return add(other, this.unit);
     }
 
-    // Addition with explicit target unit
-    public QuantityWeight add(
-            QuantityWeight other,
-            WeightUnit targetUnit
+    // Add with explicit target unit
+    public Quantity<U> add(
+            Quantity<U> other,
+            U targetUnit
     ) {
 
         if (other == null) {
             throw new IllegalArgumentException(
-                    "Second operand cannot be null"
+                    "Other quantity cannot be null"
             );
         }
 
@@ -107,8 +103,8 @@ public class QuantityWeight {
                         totalBase
                 );
 
-        return new QuantityWeight(
-                result,
+        return new Quantity<>(
+                round(result),
                 targetUnit
         );
     }
@@ -126,8 +122,14 @@ public class QuantityWeight {
             return false;
         }
 
-        QuantityWeight other =
-                (QuantityWeight) obj;
+        Quantity<?> other =
+                (Quantity<?>) obj;
+
+        // Prevent cross-category comparison
+        if (this.unit.getClass() !=
+                other.unit.getClass()) {
+            return false;
+        }
 
         double thisBase =
                 unit.convertToBaseUnit(value);
@@ -142,14 +144,21 @@ public class QuantityWeight {
         ) < EPSILON;
     }
 
-    // hashCode
     @Override
     public int hashCode() {
 
         double baseValue =
                 unit.convertToBaseUnit(value);
 
-        return Double.hashCode(baseValue);
+        return Double.hashCode(
+                round(baseValue)
+        );
+    }
+
+    private double round(double value) {
+
+        return Math.round(value * 100.0)
+                / 100.0;
     }
 
     @Override
@@ -158,7 +167,7 @@ public class QuantityWeight {
         return "Quantity(" +
                 value +
                 ", " +
-                unit +
+                unit.getUnitName() +
                 ")";
     }
 }
