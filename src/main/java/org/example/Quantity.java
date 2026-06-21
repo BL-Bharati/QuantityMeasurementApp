@@ -1,5 +1,6 @@
 package org.example;
 import java.util.function.DoubleBinaryOperator;
+
 public class Quantity<U extends IMeasurable> {
 
     private static final double EPSILON = 0.0001;
@@ -321,4 +322,6 @@ public class Quantity<U extends IMeasurable> {
                 unit.getUnitName() +
                 ")";
     }
+
+
 }
